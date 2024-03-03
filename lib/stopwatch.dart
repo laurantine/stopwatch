@@ -17,6 +17,8 @@ class _StopwatchState extends State<Stopwatch> {
   int milliseconds = 0;
   late Timer timer;
   final laps = <int>[];
+  final itemHeight = 60.0;
+  final scrollController = ScrollController();
   @override
   // void initState() {
   //   super.initState();
@@ -36,6 +38,11 @@ class _StopwatchState extends State<Stopwatch> {
       laps.add(milliseconds);
       milliseconds = 0;
     });
+    scrollController.animateTo(
+      itemHeight * laps.length,
+      duration: const Duration(microseconds: 500),
+      curve: Curves.easeIn,
+    );
   }
 
   String _secondsText(int milliseconds) {
@@ -68,19 +75,33 @@ class _StopwatchState extends State<Stopwatch> {
 
     @override
     Widget _buildLapDisplay() {
-      return ListView(
-        children: [
-          for (int milliseconds in laps)
-            ListTile(
-              title: Text(_secondsText(milliseconds)),
-            )
-        ],
+      return Scrollbar(
+        child: ListView.builder(
+          controller: scrollController,
+          itemExtent: itemHeight,
+          itemCount: laps.length,
+          itemBuilder: (context, index) {
+            final milliseconds = laps[index];
+            return ListTile(
+              contentPadding: EdgeInsets.symmetric(horizontal: 50),
+              title: Text('Lap ${index + 1}'),
+              trailing: Text(_secondsText(milliseconds)),
+            );
+          },
+          // children: [
+          //   for (int milliseconds in laps)
+          //     ListTile(
+          //       title: Text(_secondsText(milliseconds)),
+          //     )
+          // ],
+        ),
       );
     }
 
     // ignore: unused_element
     void dispose() {
       timer.cancel();
+      scrollController.dispose();
       super.dispose();
     }
 
