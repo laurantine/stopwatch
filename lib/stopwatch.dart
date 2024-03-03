@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import 'dart:async';
 
+import 'package:flutter/widgets.dart';
+
 class Stopwatch extends StatefulWidget {
   const Stopwatch({super.key});
 
@@ -12,8 +14,9 @@ class Stopwatch extends StatefulWidget {
 bool isTicking = false;
 
 class _StopwatchState extends State<Stopwatch> {
-  int seconds = 0;
+  int milliseconds = 0;
   late Timer timer;
+  final laps = <int>[];
   @override
   // void initState() {
   //   super.initState();
@@ -23,18 +26,35 @@ class _StopwatchState extends State<Stopwatch> {
   void _onTick(Timer timer) {
     if (mounted) {
       setState(() {
-        ++seconds;
+        milliseconds += 100;
       });
     }
   }
 
+  void _lap() {
+    setState(() {
+      laps.add(milliseconds);
+      milliseconds = 0;
+    });
+  }
+
+  String _secondsText(int milliseconds) {
+    final seconds = milliseconds / 1000;
+    return '$seconds seconds';
+  }
+
   Widget build(BuildContext context) {
-    // ignore: no_leading_underscores_for_local_identifiers
-    String _secondsText() => seconds == 1 ? 'second' : 'seconds';
+    // ignore: no_leading_underscores_for_local_identifiers, unused_element
+    // String _secondsText(int milliseconds) {
+    //   final seconds = milliseconds / 1000;
+    //   return '$seconds seconds';
+    // }
+
     void _startTimer() {
-      timer = Timer.periodic(const Duration(seconds: 1), _onTick);
+      timer = Timer.periodic(const Duration(milliseconds: 100), _onTick);
       setState(() {
-        seconds = 0;
+        laps.clear();
+        milliseconds = 0;
         isTicking = true;
       });
     }
@@ -47,6 +67,17 @@ class _StopwatchState extends State<Stopwatch> {
     }
 
     @override
+    Widget _buildLapDisplay() {
+      return ListView(
+        children: [
+          for (int milliseconds in laps)
+            ListTile(
+              title: Text(_secondsText(milliseconds)),
+            )
+        ],
+      );
+    }
+
     // ignore: unused_element
     void dispose() {
       timer.cancel();
@@ -58,39 +89,71 @@ class _StopwatchState extends State<Stopwatch> {
         title: const Text('StopWatch'),
       ),
       body: Column(
+        children: [
+          Expanded(child: _buildCounter(context, _startTimer, _stopTimer)),
+          Expanded(child: _buildLapDisplay()),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCounter(
+      BuildContext context, void _startTimer(), void _stopTimer()) {
+    return Container(
+      color: Theme.of(context).primaryColor,
+      child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
-            '$seconds ${_secondsText()}',
-            style: Theme.of(context).textTheme.headlineSmall,
+            'Lap ${laps.length + 1}',
+            style: Theme.of(context)
+                .textTheme
+                .headline5!
+                .copyWith(color: Colors.white),
           ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              ElevatedButton(
-                style: ButtonStyle(
-                  backgroundColor:
-                      MaterialStateProperty.all<Color>(Colors.green),
-                  foregroundColor:
-                      MaterialStateProperty.all<Color>(Colors.white),
-                ),
-                onPressed: isTicking ? null : _startTimer,
-                child: const Text('Start'),
-              ),
-              const SizedBox(width: 20),
-              TextButton(
-                style: ButtonStyle(
-                    backgroundColor:
-                        MaterialStateProperty.all<Color>(Colors.red),
-                    foregroundColor:
-                        MaterialStateProperty.all<Color>(Colors.white)),
-                onPressed: isTicking ? _stopTimer : null,
-                child: const Text('Stop'),
-              ),
-            ],
-          )
+          Text(
+            _secondsText(milliseconds),
+            style: Theme.of(context)
+                .textTheme
+                .headline5!
+                .copyWith(color: Colors.white),
+          ),
+          _buildControls(_startTimer, _stopTimer)
         ],
       ),
+    );
+  }
+
+  Widget _buildControls(void _startTimer(), void _stopTimer()) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        ElevatedButton(
+          style: ButtonStyle(
+            backgroundColor: MaterialStateProperty.all<Color>(Colors.green),
+            foregroundColor: MaterialStateProperty.all<Color>(Colors.white),
+          ),
+          onPressed: isTicking ? null : _startTimer,
+          child: const Text('Start'),
+        ),
+        const SizedBox(width: 20),
+        ElevatedButton(
+          style: ButtonStyle(
+            backgroundColor: MaterialStateProperty.all<Color>(Colors.yellow),
+            foregroundColor: MaterialStateProperty.all<Color>(Colors.white),
+          ),
+          onPressed: isTicking ? _lap : null,
+          child: const Text('Lap'),
+        ),
+        const SizedBox(width: 20),
+        TextButton(
+          style: ButtonStyle(
+              backgroundColor: MaterialStateProperty.all<Color>(Colors.red),
+              foregroundColor: MaterialStateProperty.all<Color>(Colors.white)),
+          onPressed: isTicking ? _stopTimer : null,
+          child: const Text('Stop'),
+        ),
+      ],
     );
   }
 }
