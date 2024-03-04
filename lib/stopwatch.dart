@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 
 import 'package:flutter/widgets.dart';
+import './platform_alert.dart';
 
 class Stopwatch extends StatefulWidget {
   final String name;
@@ -73,7 +74,15 @@ class _StopwatchState extends State<Stopwatch> {
       setState(() {
         isTicking = false;
       });
+      final totalRuntime = laps.fold(milliseconds, (total, lap) => total + lap);
+      final alert = PlatformAlert(
+        title: 'Run Completed!',
+        message: 'Total Run Time ${_secondsText(totalRuntime)}.',
+      );
+      alert.show(context);
     }
+
+    ;
 
     @override
     Widget _buildLapDisplay() {
